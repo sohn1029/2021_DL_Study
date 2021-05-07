@@ -8,4 +8,6 @@
 ## Books
 - 밑바닥부터 시작하는 딥러닝
 
-
+## Dataset
+- MNIST
+- [A-Z Handwritten Alphabets](https://www.kaggle.com/sachinpatel21/az-handwritten-alphabets-in-csv-format)
