@@ -6,7 +6,7 @@ import numpy as np
 from collections import OrderedDict
 from utils.layer import *
 from utils.function import numerical_gradient
-#from common.layers import *
+from common.layers import *
 
 class SimpleConvNet:
     
@@ -24,14 +24,14 @@ class SimpleConvNet:
         # 가중치 초기화
         self.params = {}
         self.params['W1'] = weight_init_std * \
-                            np.random.randn(filter_num, input_dim[0], filter_size, filter_size)#randn?
-        self.params['b1'] = np.zeros(filter_num)
+                            cp.random.randn(filter_num, input_dim[0], filter_size, filter_size)#randn?
+        self.params['b1'] = cp.zeros(filter_num)
         self.params['W2'] = weight_init_std * \
-                            np.random.randn(pool_output_size, hidden_size)
-        self.params['b2'] = np.zeros(hidden_size)
+                            cp.random.randn(pool_output_size, hidden_size)
+        self.params['b2'] = cp.zeros(hidden_size)
         self.params['W3'] = weight_init_std * \
-                            np.random.randn(hidden_size, output_size)
-        self.params['b3'] = np.zeros(output_size)
+                            cp.random.randn(hidden_size, output_size)
+        self.params['b3'] = cp.zeros(output_size)
 
         # 계층 생성
         self.layers = OrderedDict()
@@ -40,7 +40,9 @@ class SimpleConvNet:
         self.layers['Relu1'] = Relu()
         self.layers['Pool1'] = Pooling(pool_h=2, pool_w=2, stride=2)
         self.layers['Affine1'] = Affine(self.params['W2'], self.params['b2'])
+        self.layers["BatchNorm1"] = BatchNormalization(1.1, 0.1)
         self.layers['Relu2'] = Relu()
+        self.layers["Dropout"] = Dropout()
         self.layers['Affine2'] = Affine(self.params['W3'], self.params['b3'])
 
         self.last_layer = SoftmaxWithLoss()
@@ -65,8 +67,8 @@ class SimpleConvNet:
             tx = x[i*batch_size:(i+1)*batch_size]
             tt = t[i*batch_size:(i+1)*batch_size]
             y = self.predict(tx)
-            y = np.argmax(y, axis=1)
-            acc += np.sum(y == tt) 
+            y = cp.argmax(y, axis=1)
+            acc += cp.sum(y == tt)
         
         return acc / x.shape[0]
 

@@ -3,6 +3,9 @@ import sys, os
 sys.path.append(os.pardir)  # 부모 디렉터리의 파일을 가져올 수 있도록 설정
 import numpy as np
 from common.optimizer import *
+from tqdm import tqdm
+
+import cupy as cp
 
 class Trainer:
     """신경망 훈련을 대신 해주는 클래스
@@ -10,7 +13,8 @@ class Trainer:
     def __init__(self, network, x_train, t_train, x_test, t_test,
                  epochs=20, mini_batch_size=100,
                  optimizer='SGD', optimizer_param={'lr':0.01}, 
-                 evaluate_sample_num_per_epoch=None, verbose=True):
+                 evaluate_sample_num_per_epoch=None, verbose=True,
+                 early_stopping_epsilon=0.00002):
         self.network = network
         self.verbose = verbose
         self.x_train = x_train
@@ -20,6 +24,7 @@ class Trainer:
         self.epochs = epochs
         self.batch_size = mini_batch_size
         self.evaluate_sample_num_per_epoch = evaluate_sample_num_per_epoch
+        self.early_stopping_epsilon = early_stopping_epsilon
 
         # optimzer
         optimizer_class_dict = {'sgd':SGD, 'momentum':Momentum, 'nesterov':Nesterov,
@@ -41,12 +46,16 @@ class Trainer:
         x_batch = self.x_train[batch_mask]
         t_batch = self.t_train[batch_mask]
         
+        x_batch = cp.array(x_batch)
+        t_batch = cp.array(t_batch)
+
         grads = self.network.gradient(x_batch, t_batch)
         self.optimizer.update(self.network.params, grads)
         
         loss = self.network.loss(x_batch, t_batch)
         self.train_loss_list.append(loss)
-        if self.verbose: print("train loss:" + str(loss))
+        # if self.verbose and self.current_epoch % 20 == 0:
+        #     print("train loss:" + str(loss))
         
         if self.current_iter % self.iter_per_epoch == 0:
             self.current_epoch += 1
@@ -63,12 +72,16 @@ class Trainer:
             self.train_acc_list.append(train_acc)
             self.test_acc_list.append(test_acc)
 
-            if self.verbose: print("=== epoch:" + str(self.current_epoch) + ", train acc:" + str(train_acc) + ", test acc:" + str(test_acc) + " ===")
+            if self.verbose and self.current_epoch % 20 == 0:
+                print("=== epoch:" + str(self.current_epoch) + ", train acc:" + str(train_acc) + ", test acc:" + str(test_acc) + " ===")
         self.current_iter += 1
 
     def train(self):
-        for i in range(self.max_iter):
+        for i in tqdm(range(self.max_iter)):
             self.train_step()
+            # early stop
+            if (len(self.train_loss_list) > 1) and (abs(self.train_loss_list[i] - self.train_loss_list[i-1]) < self.early_stopping_epsilon):
+                break
 
         test_acc = self.network.accuracy(self.x_test, self.t_test)
 
