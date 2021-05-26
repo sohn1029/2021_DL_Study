@@ -17,10 +17,10 @@ class Trainer:
                  early_stopping_epsilon=0.00002):
         self.network = network
         self.verbose = verbose
-        self.x_train = x_train
-        self.t_train = t_train
-        self.x_test = x_test
-        self.t_test = t_test
+        self.x_train = cp.array(x_train)
+        self.t_train = cp.array(t_train)
+        self.x_test = cp.array(x_test)
+        self.t_test = cp.array(t_test)
         self.epochs = epochs
         self.batch_size = mini_batch_size
         self.evaluate_sample_num_per_epoch = evaluate_sample_num_per_epoch
@@ -46,8 +46,6 @@ class Trainer:
         x_batch = self.x_train[batch_mask]
         t_batch = self.t_train[batch_mask]
         
-        x_batch = cp.array(x_batch)
-        t_batch = cp.array(t_batch)
 
         grads = self.network.gradient(x_batch, t_batch)
         self.optimizer.update(self.network.params, grads)
@@ -62,15 +60,18 @@ class Trainer:
             
             x_train_sample, t_train_sample = self.x_train, self.t_train
             x_test_sample, t_test_sample = self.x_test, self.t_test
+
             if not self.evaluate_sample_num_per_epoch is None:
                 t = self.evaluate_sample_num_per_epoch
                 x_train_sample, t_train_sample = self.x_train[:t], self.t_train[:t]
                 x_test_sample, t_test_sample = self.x_test[:t], self.t_test[:t]
-                
+   
+
             train_acc = self.network.accuracy(x_train_sample, t_train_sample)
             test_acc = self.network.accuracy(x_test_sample, t_test_sample)
-            self.train_acc_list.append(train_acc)
-            self.test_acc_list.append(test_acc)
+
+            self.train_acc_list.append(cp.asnumpy(train_acc))
+            self.test_acc_list.append(cp.asnumpy(test_acc))
 
             if self.verbose and self.current_epoch % 20 == 0:
                 print("=== epoch:" + str(self.current_epoch) + ", train acc:" + str(train_acc) + ", test acc:" + str(test_acc) + " ===")
@@ -80,8 +81,8 @@ class Trainer:
         for i in tqdm(range(self.max_iter)):
             self.train_step()
             # early stop
-            if (len(self.train_loss_list) > 1) and (abs(self.train_loss_list[i] - self.train_loss_list[i-1]) < self.early_stopping_epsilon):
-                break
+            # if (len(self.train_loss_list) > 1) and (abs(self.train_loss_list[i] - self.train_loss_list[i-1]) < self.early_stopping_epsilon):
+            #     break
 
         test_acc = self.network.accuracy(self.x_test, self.t_test)
 
