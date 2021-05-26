@@ -47,7 +47,7 @@ validset = pd.read_csv("./handwritten_alphabet_dataset/valid_set.csv")
 
 train_y = np.array(trainset["0"])[:10000] # label
 train_x = np.array(trainset.drop("0", axis=1))[:5000].reshape(-1, 1, 28, 28) # (238368, 1, 28, 28)
-train_x = np.array([deskew(img) for img in train_x.reshape(-1, 784)])
+# train_x = np.array([deskew(img) for img in train_x.reshape(-1, 784)])
 
 valid_y = np.array(validset["0"])[:1000] # label
 valid_x = np.array(validset.drop("0", axis=1))[:1000].reshape(-1, 1, 28, 28) # (59592, 1, 28, 28)

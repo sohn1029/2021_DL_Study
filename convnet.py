@@ -7,6 +7,7 @@ from collections import OrderedDict
 from utils.layer import *
 from utils.function import numerical_gradient
 from common.layers import *
+import cupy as cp
 
 class SimpleConvNet:
     

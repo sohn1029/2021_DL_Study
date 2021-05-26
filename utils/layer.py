@@ -3,6 +3,7 @@ import numpy as np
 from utils.function import *
 #from common.functions import *
 #from common.util import im2col, col2im
+import cupy as cp
 
 class MulLayer:
     def __init__(self):
